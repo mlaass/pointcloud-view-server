@@ -6,6 +6,9 @@ import { toHumanString } from 'HRNumbers';
 
 import { TrackballControls } from 'TrackballControls';
 import { FirstPersonControls } from 'FirstPersonControls';
+import { OrbitControls, MapControls } from 'OrbitControls';
+import { FlyControls } from 'FlyControls';
+import { DragControls } from 'DragControls';
 import Stats from 'Stats'
 import { RGBA_ASTC_10x10_Format } from 'three';
 
@@ -15,9 +18,11 @@ var material, controls;
 var objects = [];
 
 var settings = {
-    animation: '',
+    controls: 'trackball',
     points: 1000,
-    pointSize: 1,
+    pointSize: 0.05,
+    show_grid: true,
+    color: "#00fe88"
 }
 
 function main() {
@@ -36,16 +41,17 @@ function main() {
     camera.position.z = 2;
 
     scene = new THREE.Scene();
-    var flyControls = new FirstPersonControls(camera, renderer.domElement);
-    flyControls.activeLook = true;
-    flyControls.lookSpeed = 0.2;
-    flyControls.mouseDragOn = true;
+
 
     var ambientLight = new THREE.AmbientLight(0x383838);
     scene.add(ambientLight);
     setupGUI();
     setupObjects();
-    setupControls(camera);
+    setupControls(settings.controls);
+    // stats = new Stats();
+    // stats.domElement.style.position = 'absolute';
+    // stats.domElement.style.bottom = '0px';
+    // document.body.appendChild(stats.domElement);
 
     function resizeRendererToDisplaySize(renderer) {
         const canvas = renderer.domElement;
@@ -69,16 +75,7 @@ function main() {
         }
 
         controls.update(delta);
-
-        // cubes.forEach((cube, ndx) => {
-        //   const speed = .2 + ndx * .1;
-        //   const rot = time * speed;
-        //   cube.rotation.x = rot;
-        //   cube.rotation.y = rot;
-        // });
-
         renderer.render(scene, camera);
-
         requestAnimationFrame(render);
     }
 
@@ -87,22 +84,78 @@ function main() {
 
 main();
 
-function setupControls(camera) {
+function setupControls(ctrl) {
+    console.log(ctrl);
 
-    controls = new TrackballControls(camera, renderer.domElement);
+    if (ctrl == 'trackball') {
 
-    controls.rotateSpeed = 1.0;
-    controls.zoomSpeed = 1.2;
-    controls.panSpeed = 0.8;
+        controls = new TrackballControls(camera, renderer.domElement);
 
-    controls.keys = ['A', 'S', 'D'];
+        controls.rotateSpeed = 1.0;
+        controls.zoomSpeed = 1.2;
+        controls.panSpeed = 0.8;
+
+        controls.keys = ['A', 'S', 'D'];
+    }
+    if (ctrl == 'orbit') {
+        controls = new OrbitControls(camera, renderer.domElement);
+        controls.listenToKeyEvents(window); // optional
+
+        //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+
+        controls.screenSpacePanning = false;
+
+        controls.minDistance = 0.1;
+        controls.maxDistance = 1500;
+
+        controls.maxPolarAngle = Math.PI / 2;
+    }
+    if (ctrl == 'map') {
+        controls = new MapControls(camera, renderer.domElement);
+
+        //controls.addEventListener( 'change', render ); // call this only in static scenes (i.e., if there is no animation loop)
+
+        controls.enableDamping = true; // an animation loop is required when either damping or auto-rotation are enabled
+        controls.dampingFactor = 0.05;
+
+        controls.screenSpacePanning = false;
+
+        controls.minDistance = 0.1;
+        controls.maxDistance = 1500;
+
+        controls.maxPolarAngle = Math.PI / 2;
+    }
+    if (ctrl == 'fly') {
+        controls = new FlyControls(camera, renderer.domElement);
+
+        controls.movementSpeed = 10;
+        controls.domElement = renderer.domElement;
+        controls.rollSpeed = Math.PI / 24;
+        controls.autoForward = false;
+        controls.dragToLook = false;
+    }
+    if (ctrl == 'drag') {
+        controls = new DragControls([...objects], camera, renderer.domElement);
+        controls.addEventListener('drag', render);
+    }
+    if (ctrl == 'firstperson') {
+
+        controls = new FirstPersonControls(camera, renderer.domElement);
+        controls.activeLook = true;
+        controls.lookSpeed = 0.1;
+        controls.mouseDragOn = true;
+        controls.movementSpeed = settings.pointSize
+    }
 }
 
 function setupObjects() {
     var geometry = new THREE.TorusGeometry(1, 0.42);
-    var material = new THREE.MeshNormalMaterial();
-    var mesh = new THREE.Mesh(geometry, material);
-    objects.push(mesh.uuid);
+    var mmaterial = new THREE.MeshNormalMaterial();
+    var mesh = new THREE.Mesh(geometry, mmaterial);
+    objects.push(mesh);
     scene.add(mesh);
     const MAX_POINTS = 1000;
 
@@ -129,18 +182,18 @@ function setupObjects() {
         new THREE.BufferAttribute(new Float32Array(points), positionNumComponents));
 
     material = new THREE.PointsMaterial({
-        color: "blue",
-        size: 0.02,
-        sizeAttenuation: true
+        color: new THREE.Color(settings.color),
+        size: settings.pointSize,
+        sizeAttenuation: true,
     });
     var pointCloud = new THREE.Points(geometry, material);
-    objects.push(pointCloud.uuid);
+    objects.push(pointCloud);
     scene.add(pointCloud);
 }
 
 function cleanupScene() {
     objects.forEach(i => {
-        const object = scene.getObjectByProperty('uuid', i);
+        const object = scene.getObjectByProperty('uuid', i.uuid);
 
         object.geometry.dispose();
         object.material.dispose();
@@ -160,35 +213,35 @@ function addPointCloud(pc) {
         new THREE.BufferAttribute(new Float32Array(pc.flat()), positionNumComponents));
 
     material = new THREE.PointsMaterial({
-        color: new THREE.Color("rgba(255, 0, 0, 128)"),
-        size: 1,
+        color: new THREE.Color(settings.color),
+        size: settings.pointSize,
         sizeAttenuation: true,
     });
     var pointCloud = new THREE.Points(geometry, material);
-    objects.push(pointCloud.uuid);
+    objects.push(pointCloud);
     scene.add(pointCloud);
 }
 
 function setupGUI() {
     var gui = new dat.GUI(/*{ autoPlace: false }*/);
-    //document.getElementById('settings').appendChild(gui.domElement);
-    var prevAnim = settings.animation;
-    gui.add(settings, 'animation', { None: '', Spin: 'spin', Drift: 'drift' })
-        .onChange(anim => {
-            if (!prevAnim) { // Start animating, if not currently animating.
-                requestAnimationFrame(render);
-            }
-            prevAnim = anim;
+    gui.addColor(settings, 'color',)
+        .onChange(clr => {
+            material.color = new THREE.Color(clr);
+        });
+    gui.add(settings, 'controls', { TrackBall: 'trackball', FirstPerson: 'firstperson', Drag: 'drag', Fly: 'fly', Map: 'map', Orbit: 'orbit' })
+        .onChange(ctrl => {
+            setupControls(ctrl);
         });
 
-    gui.add(settings, 'pointSize', .001, 2)
+    gui.add(settings, 'pointSize', .001, 5)
         .onChange(size => {
             // Change the size of the points by modifying the size property of the matrial.
-            material.size = size;
-            if (!settings.animation) {
-                render();
-            }
+            material.size = settings.pointSize;
         });
+
+    gui.add(settings, 'show_grid').onChange(grd => {
+        console.log(grd);
+    });
 }
 
 function load_scene(event) {
@@ -222,15 +275,27 @@ function load_scene(event) {
 $(document).ready(function () {
     console.log("ready")
 
+    $("#show_browser").hide();
 
-    $('#load_datasets').click(function () {
+    $('#hide_browser').click(() => {
+        $("#browser").hide();
+        $("#show_browser").show();
+
+    });
+
+    $('#show_browser').click(() => {
+        $("#browser").show();
+        $("#show_browser").hide();
+
+    });
+    $('#load_datasets').click(() => {
         $.ajax({
             type: "GET",
             url: `/datasets/`,
             contentType: 'application/json',
             dataType: 'json',
             async: false,
-            success: function (res) {
+            success: (res) => {
                 console.log(res)
                 var browser = ''
                 Object.entries(res.files).forEach((entry) => {
@@ -241,8 +306,8 @@ $(document).ready(function () {
                         browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${toHumanString(data)}</a></br>`;
                     });
                 });
-                $('#browser').html("");
-                $('#browser').append(browser);
+                $('#browserlist').html("");
+                $('#browserlist').append(browser);
                 $('a.load_scene').bind('click', load_scene);
             }
         });

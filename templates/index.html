@@ -2,14 +2,14 @@
 <html>
 
 <head>
-	<title>learningthree.js boiler plate for three.js</title>
+	<title>Pointcloud viewer</title>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
 
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.3/dat.gui.min.js"></script>
 
 	<script src="/static/js/jquery-3.6.0.min.js"></script>
-
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 	<link href="/static/css/main.css" rel="stylesheet" />
 	<style>
 		html,
@@ -23,6 +23,25 @@
 			height: 100%;
 			display: block;
 			_cursor: none;
+		}
+
+		#browserlist {
+			margin-top: 3em;
+			background-color: rgba(255, 255, 255, 0.1);
+		}
+
+		#hide_browser {
+			position: absolute;
+			top: 0px;
+			right: 0px;
+			font-size: 2em;
+		}
+
+		#show_browser {
+			font-size: 2em;
+			position: absolute;
+			top: 0px;
+			left: 0px;
 		}
 	</style>
 </head>
@@ -41,8 +60,13 @@
 		<div class="bottom" id="inlineDoc">
 			- <i>p</i> for screenshot
 		</div>
+		<button type="button" id="show_browser" class="btn"><i class="bi bi-list"></i></button>
 		<div class="left" id="browser" style="overflow-y: scroll; height:100%">
-			<a href=" #1" id="load_datasets">Load Datasets </a>
+			<button type="button" id="hide_browser" class="btn "><i class="bi bi-arrow-left"></i></button>
+			<div id="browserlist">
+
+				<button type="button" class="btn " id="load_datasets">Load Datasets </button>
+			</div>
 		</div>
 	</div>
 	<script type="importmap">
@@ -51,6 +75,9 @@
 	        "three": "/static/three.js/build/three.module.js",
 	        "TrackballControls": "/static/three.js/examples/jsm/controls/TrackballControls.js",
 	        "FirstPersonControls": "/static/three.js/examples/jsm/controls/FirstPersonControls.js",
+	        "OrbitControls": "/static/three.js/examples/jsm/controls/OrbitControls.js",
+	        "FlyControls": "/static/three.js/examples/jsm/controls/FlyControls.js",
+	        "DragControls": "/static/three.js/examples/jsm/controls/DragControls.js",
 	        "Stats": "/static/three.js/examples/jsm/libs/stats.module.js",
 	        "HRNumbers": "/static/js/hrnum.js"
 	    }
