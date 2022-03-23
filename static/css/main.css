@@ -28,3 +28,10 @@ body {
 	right		: 5px;
 	padding		: 5px;
 }
+
+.left {
+	position	: absolute;
+	top		: 0px;
+	left		: 5px;
+	padding		: 5px;
+}

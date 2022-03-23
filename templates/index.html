@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+
+<head>
+	<title>learningthree.js boiler plate for three.js</title>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/84/three.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.3/dat.gui.min.js"></script>
+
+	<script src="/static/js/jquery-3.6.0.min.js"></script> -->
+
+	<link href="/static/css/main.css" rel="stylesheet" />
+
+</head>
+
+<body>
+	<!-- three.js container -->
+	<div id="container"></div>
+	<!-- info on screen display -->
+	<div id="info">
+		<div class="top">
+			<!-- <a href="http://learningthreejs.com/blog/2011/12/20/boilerplate-for-three-js/"
+				target="_blank">LearningThree.js</a>
+				boiler plate for
+				<a href="https://github.com/mrdoob/three.js/" target="_blank">three.js</a> -->
+		</div>
+		<div class="bottom" id="inlineDoc">
+			- <i>p</i> for screenshot
+		</div>
+		<div class="left" id="browser" style="overflow-y: scroll; height:100%">
+			<a href=" #1" id="load_datasets">Load Datasets </a>
+		</div>
+	</div>
+
+	<script src="/static/js/script.js"></script>
+	<script type="text/javascript">
+		function load_scene(event) {
+
+			event = event || window.event;
+			console.log(event);
+			if (event.preventDefault) {
+				event.preventDefault();
+			}
+			if (event.stopPropagation) {
+				event.stopPropagation();
+			}
+			var scene_url = $(this).attr("href");
+
+			$.ajax({
+				type: "GET",
+				url: scene_url,
+				contentType: 'application/json',
+				dataType: 'json',
+				async: false,
+				success: function (res) {
+					console.log(res)
+					cleanupScene();
+					addPointCloud(res.coords);
+
+				}
+			});
+
+			return false;
+		}
+		$(document).ready(function () {
+			console.log("ready")
+
+
+			$('#load_datasets').click(function () {
+				$.ajax({
+					type: "GET",
+					url: `/datasets/`,
+					contentType: 'application/json',
+					dataType: 'json',
+					async: false,
+					success: function (res) {
+						console.log(res)
+						var browser = ''
+						Object.entries(res.files).forEach((entry) => {
+							const [key, value] = entry;
+							browser += `<h2>${key}</h2>`;
+							Object.entries(value).forEach((scene) => {
+								const [name, data] = scene;
+								browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${data}</a></br>`;
+							});
+						});
+						$('#browser').html("");
+						$('#browser').append(browser);
+						$('a.load_scene').bind('click', load_scene);
+					}
+				});
+			});
+
+		});
+	</script>
+</body>
+
+  <script type="module">
+	// Three.js - Textured Cube - 6 Textures
+	// from https://threejsfundamentals.org/threejs/threejs-textured-cube-6-textures.html
+
+	import * as THREE from './three.js/build/three.module.js';
+	import {FirstPersonControls} from './three.js/examples/jsm/controls/FirstPersonControls.js';
+
+
+	function main() {
+
+
+	const canvas = document.querySelector('#c');
+	const renderer = new THREE.WebGLRenderer({canvas});
+	renderer.setClearColor(0x111111, 255)
+	const clock = new THREE.Clock();
+
+	const fov = 75;
+	const aspect = 2;  // the canvas default
+	const near = 0.1;
+	const far = 5000;
+	const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+	camera.position.z = 2;
+
+	const scene = new THREE.Scene();
+	var flyControls = new FirstPersonControls( camera, renderer.domElement );
+	flyControls.activeLook = true;
+	flyControls.lookSpeed = 0.2;
+	flyControls.mouseDragOn = true;
+
+	var ambientLight = new THREE.AmbientLight(0x383838);
+	scene.add(ambientLight);
+	</script>
+
+</html>
