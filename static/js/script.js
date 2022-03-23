@@ -2,9 +2,14 @@
 // from https://threejsfundamentals.org/threejs/threejs-textured-cube-6-textures.html
 
 import * as THREE from 'three';
-import { TrackballControls } from 'TrackballControls';
+import { toHumanString } from 'HRNumbers';
 
+import { TrackballControls } from 'TrackballControls';
 import { FirstPersonControls } from 'FirstPersonControls';
+import Stats from 'Stats'
+import { RGBA_ASTC_10x10_Format } from 'three';
+
+
 var stats, scene, renderer, camera;
 var material, controls;
 var objects = [];
@@ -12,7 +17,7 @@ var objects = [];
 var settings = {
     animation: '',
     points: 1000,
-    pointSize: 2,
+    pointSize: 1,
 }
 
 function main() {
@@ -155,7 +160,7 @@ function addPointCloud(pc) {
         new THREE.BufferAttribute(new Float32Array(pc.flat()), positionNumComponents));
 
     material = new THREE.PointsMaterial({
-        color: "blue",
+        color: new THREE.Color("rgba(255, 0, 0, 128)"),
         size: 1,
         sizeAttenuation: true,
     });
@@ -176,7 +181,7 @@ function setupGUI() {
             prevAnim = anim;
         });
 
-    gui.add(settings, 'pointSize', .1, 10)
+    gui.add(settings, 'pointSize', .001, 2)
         .onChange(size => {
             // Change the size of the points by modifying the size property of the matrial.
             material.size = size;
@@ -233,7 +238,7 @@ $(document).ready(function () {
                     browser += `<h2>${key}</h2>`;
                     Object.entries(value).forEach((scene) => {
                         const [name, data] = scene;
-                        browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${data}</a></br>`;
+                        browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${toHumanString(data)}</a></br>`;
                     });
                 });
                 $('#browser').html("");
