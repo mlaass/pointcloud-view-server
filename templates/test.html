@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+    <title>Three.js - Textured Cube - 6 Textures</title>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        #c {
+            width: 100%;
+            height: 100%;
+            display: block;
+            cursor: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <canvas id="c"></canvas>
+
+</body>
+
+<script type="module">
+    // Three.js - Textured Cube - 6 Textures
+    // from https://threejsfundamentals.org/threejs/threejs-textured-cube-6-textures.html
+
+    import * as THREE from '../three.js/build/three.module.js';
+    //import { FirstPersonControls } from './three.js/examples/jsm/controls/FirstPersonControls.js';
+
+
+    function main() {
+
+
+        const canvas = document.querySelector('#c');
+        const renderer = new THREE.WebGLRenderer({ canvas });
+        renderer.setClearColor(0x111111, 255)
+        const clock = new THREE.Clock();
+
+        const fov = 75;
+        const aspect = 2;  // the canvas default
+        const near = 0.1;
+        const far = 5000;
+        const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+        camera.position.z = 2;
+
+        const scene = new THREE.Scene();
+        var flyControls = new FirstPersonControls(camera, renderer.domElement);
+        flyControls.activeLook = true;
+        flyControls.lookSpeed = 0.2;
+        flyControls.mouseDragOn = true;
+
+        var ambientLight = new THREE.AmbientLight(0x383838);
+        scene.add(ambientLight);
+
+        const boxWidth = 1;
+        const boxHeight = 1;
+        const boxDepth = 1;
+        const geometry = new THREE.BoxGeometry(boxWidth, boxHeight, boxDepth);
+
+        const cubes = [];  // just an array we can use to rotate the cubes
+        const loader = new THREE.TextureLoader();
+
+        // const material =
+        //   new THREE.MeshBasicMaterial({map: loader.load('../../../data/fashionmnist/data/test/7/1658.png')});
+
+        // const cube = new THREE.Mesh(geometry, material);
+        // cube.scale.x = 0.1
+        // cube.scale.y = 0.1
+        // cube.scale.z = 0.1
+        //scene.add(cube);
+        //cubes.push(cube);  // add to our list of cubes to rotate
+        var materials = []
+        $.getJSON("aid_index_embedding_pca.json", function (json) {
+            console.log(json)
+            var pscale = 1;
+            json["embedding"].forEach((e, i) => {
+                var topic = parseInt(json.topics[i]);
+                //console.log(topic)
+                var c = json.rgba[topic];
+                //console.log(c)
+                var rgb = `rgb(${255 * c[0]},${255 * c[1]},${255 * c[2]})`
+
+                var mat = new THREE.SpriteMaterial({ map: loader.load(json["filenames"][i]), color: new THREE.Color(c[0], c[1], c[2]) });
+                materials.push(mat);
+                console.log(`${i} => ${json.filenames[i]}`);
+                const cube = new THREE.Sprite(materials[i]);
+                var rscale = 0.1;
+                cube.position.x = e[0] * pscale + Math.random() * rscale;
+                cube.position.y = e[1] * pscale + Math.random() * rscale;
+                cube.position.z = e[2] * pscale + Math.random() * rscale;
+
+                var sc = 0.25
+                cube.scale.x = sc;
+                cube.scale.y = sc;
+                cube.scale.z = sc;
+                scene.add(cube);
+            });
+
+        });
+
+        function resizeRendererToDisplaySize(renderer) {
+            const canvas = renderer.domElement;
+            const width = canvas.clientWidth;
+            const height = canvas.clientHeight;
+            const needResize = canvas.width !== width || canvas.height !== height;
+            if (needResize) {
+                renderer.setSize(width, height, false);
+            }
+            return needResize;
+        }
+
+        function render(time) {
+            time *= 0.001;
+            var delta = clock.getDelta();
+
+            if (resizeRendererToDisplaySize(renderer)) {
+                const canvas = renderer.domElement;
+                camera.aspect = canvas.clientWidth / canvas.clientHeight;
+                camera.updateProjectionMatrix();
+            }
+
+            flyControls.update(delta);
+
+            // cubes.forEach((cube, ndx) => {
+            //   const speed = .2 + ndx * .1;
+            //   const rot = time * speed;
+            //   cube.rotation.x = rot;
+            //   cube.rotation.y = rot;
+            // });
+
+            renderer.render(scene, camera);
+
+            requestAnimationFrame(render);
+        }
+
+        requestAnimationFrame(render);
+    }
+
+    main();
+
+</script>
+
+</html>

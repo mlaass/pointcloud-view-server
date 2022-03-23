@@ -1,58 +1,96 @@
-var stats, scene, renderer;
-var camera, cameraControl;
-var objects = new Array();
+// Three.js - Textured Cube - 6 Textures
+// from https://threejsfundamentals.org/threejs/threejs-textured-cube-6-textures.html
 
-if (!init()) animate();
+import * as THREE from 'three';
+import { TrackballControls } from 'TrackballControls';
 
-// init the scene
-function init() {
+import { FirstPersonControls } from 'FirstPersonControls';
+var stats, scene, renderer, camera;
+var material, controls;
+var objects = [];
 
-    if (Detector.webgl) {
-        renderer = new THREE.WebGLRenderer({
-            antialias: true,	// to get smoother output
-            preserveDrawingBuffer: true	// to allow screenshot
-        });
-        renderer.setClearColorHex(0xBBBBBB, 1);
-        // uncomment if webgl is required
-        //}else{
-        //	Detector.addGetWebGLMessage();
-        //	return true;
-    } else {
-        renderer = new THREE.CanvasRenderer();
-    }
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.getElementById('container').appendChild(renderer.domElement);
+var settings = {
+    animation: '',
+    points: 1000,
+    pointSize: 2,
+}
 
-    // add Stats.js - https://github.com/mrdoob/stats.js
-    stats = new Stats();
-    stats.domElement.style.position = 'absolute';
-    stats.domElement.style.bottom = '0px';
-    document.body.appendChild(stats.domElement);
+function main() {
 
-    // create a scene
+
+    const canvas = document.querySelector('#c');
+    renderer = new THREE.WebGLRenderer({ canvas });
+    renderer.setClearColor(0x111111, 255)
+    const clock = new THREE.Clock();
+
+    const fov = 75;
+    const aspect = 2;  // the canvas default
+    const near = 0.1;
+    const far = 5000;
+    camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
+    camera.position.z = 2;
+
     scene = new THREE.Scene();
+    var flyControls = new FirstPersonControls(camera, renderer.domElement);
+    flyControls.activeLook = true;
+    flyControls.lookSpeed = 0.2;
+    flyControls.mouseDragOn = true;
 
-    // put a camera in the scene
-    camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 1, 10000);
-    camera.position.set(0, 0, 5);
-    scene.add(camera);
+    var ambientLight = new THREE.AmbientLight(0x383838);
+    scene.add(ambientLight);
+    setupGUI();
+    setupObjects();
+    setupControls(camera);
 
-    // create a camera contol
-    cameraControls = new THREEx.DragPanControls(camera)
-
-    // transparently support window resize
-    THREEx.WindowResize.bind(renderer, camera);
-    // allow 'p' to make screenshot
-    THREEx.Screenshot.bindKey(renderer);
-    // allow 'f' to go fullscreen where this feature is supported
-    if (THREEx.FullScreen.available()) {
-        THREEx.FullScreen.bindKey();
-        document.getElementById('inlineDoc').innerHTML += "- <i>f</i> for fullscreen";
+    function resizeRendererToDisplaySize(renderer) {
+        const canvas = renderer.domElement;
+        const width = canvas.clientWidth;
+        const height = canvas.clientHeight;
+        const needResize = canvas.width !== width || canvas.height !== height;
+        if (needResize) {
+            renderer.setSize(width, height, false);
+        }
+        return needResize;
     }
 
-    // here you add your objects
-    // - you will most likely replace this part by your own
-    setupObjects();
+    function render(time) {
+        time *= 0.001;
+        var delta = clock.getDelta();
+
+        if (resizeRendererToDisplaySize(renderer)) {
+            const canvas = renderer.domElement;
+            camera.aspect = canvas.clientWidth / canvas.clientHeight;
+            camera.updateProjectionMatrix();
+        }
+
+        controls.update(delta);
+
+        // cubes.forEach((cube, ndx) => {
+        //   const speed = .2 + ndx * .1;
+        //   const rot = time * speed;
+        //   cube.rotation.x = rot;
+        //   cube.rotation.y = rot;
+        // });
+
+        renderer.render(scene, camera);
+
+        requestAnimationFrame(render);
+    }
+
+    requestAnimationFrame(render);
+}
+
+main();
+
+function setupControls(camera) {
+
+    controls = new TrackballControls(camera, renderer.domElement);
+
+    controls.rotateSpeed = 1.0;
+    controls.zoomSpeed = 1.2;
+    controls.panSpeed = 0.8;
+
+    controls.keys = ['A', 'S', 'D'];
 }
 
 function setupObjects() {
@@ -63,33 +101,40 @@ function setupObjects() {
     scene.add(mesh);
     const MAX_POINTS = 1000;
 
-    points = new Array(MAX_POINTS);
+    var points = new Array(MAX_POINTS * 3);
     var i = 0;
     while (i < MAX_POINTS) {
         var x = 2 * Math.random() - 1;
         var y = 2 * Math.random() - 1;
         var z = 2 * Math.random() - 1;
         if (x * x + y * y + z * z < 1) {  // only use points inside the unit sphere
-            points[i] = new THREE.Vector3(x, y, z);
+            points[i * 3] = x;
+            points[(i * 3) + 1] = y;
+            points[(i * 3) + 2] = z;
             i++;
         }
     }
-    geometry = new THREE.Geometry();
-    for (i = 0; i < MAX_POINTS; i++) {
-        geometry.vertices.push(points[i]);
-    }
+
+    geometry = new THREE.BufferGeometry();
+    const positionNumComponents = 3;
+    const normalNumComponents = 0;
+    const uvNumComponents = 0;
+    geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(points), positionNumComponents));
+
     material = new THREE.PointsMaterial({
-        color: "yellow",
-        size: 0.1,
-        sizeAttenuation: false
+        color: "blue",
+        size: 0.02,
+        sizeAttenuation: true
     });
-    pointCloud = new THREE.Points(geometry, material);
+    var pointCloud = new THREE.Points(geometry, material);
     objects.push(pointCloud.uuid);
     scene.add(pointCloud);
 }
 
 function cleanupScene() {
-    objects.ForEach(i => {
+    objects.forEach(i => {
         const object = scene.getObjectByProperty('uuid', i);
 
         object.geometry.dispose();
@@ -97,44 +142,105 @@ function cleanupScene() {
         scene.remove(object);
     });
     renderer.renderLists.dispose();
+    objects = [];
 }
 
 function addPointCloud(pc) {
-    geometry = new THREE.Geometry();
-    for (i = 0; i < pc.length; i++) {
-        geometry.vertices.push(new THREE.Vector3(pc[i][0], pc[i][1], pc[i][2]));
-    }
+    var geometry = new THREE.BufferGeometry();
+    const positionNumComponents = 3;
+    const normalNumComponents = 0;
+    const uvNumComponents = 0;
+    geometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array(pc.flat()), positionNumComponents));
+
     material = new THREE.PointsMaterial({
-        color: "green",
-        size: 2,
+        color: "blue",
+        size: 1,
         sizeAttenuation: true,
     });
-    pointCloud = new THREE.Points(geometry, material);
+    var pointCloud = new THREE.Points(geometry, material);
     objects.push(pointCloud.uuid);
     scene.add(pointCloud);
 }
 
-// animation loop
-function animate() {
+function setupGUI() {
+    var gui = new dat.GUI(/*{ autoPlace: false }*/);
+    //document.getElementById('settings').appendChild(gui.domElement);
+    var prevAnim = settings.animation;
+    gui.add(settings, 'animation', { None: '', Spin: 'spin', Drift: 'drift' })
+        .onChange(anim => {
+            if (!prevAnim) { // Start animating, if not currently animating.
+                requestAnimationFrame(render);
+            }
+            prevAnim = anim;
+        });
 
-    // loop on request animation loop
-    // - it has to be at the begining of the function
-    // - see details at http://my.opera.com/emoller/blog/2011/12/20/requestanimationframe-for-smart-er-animating
-    requestAnimationFrame(animate);
-
-    // do the render
-    render();
-
-    // update stats
-    stats.update();
+    gui.add(settings, 'pointSize', .1, 10)
+        .onChange(size => {
+            // Change the size of the points by modifying the size property of the matrial.
+            material.size = size;
+            if (!settings.animation) {
+                render();
+            }
+        });
 }
 
-// render the scene
-function render() {
+function load_scene(event) {
 
-    // update camera controls
-    cameraControls.update();
+    event = event || window.event;
+    console.log(event);
+    if (event.preventDefault) {
+        event.preventDefault();
+    }
+    if (event.stopPropagation) {
+        event.stopPropagation();
+    }
+    var scene_url = $(this).attr("href");
 
-    // actually render the scene
-    renderer.render(scene, camera);
+    $.ajax({
+        type: "GET",
+        url: scene_url,
+        contentType: 'application/json',
+        dataType: 'json',
+        async: false,
+        success: function (res) {
+            console.log(res)
+            cleanupScene();
+            addPointCloud(res.coords);
+
+        }
+    });
+
+    return false;
 }
+$(document).ready(function () {
+    console.log("ready")
+
+
+    $('#load_datasets').click(function () {
+        $.ajax({
+            type: "GET",
+            url: `/datasets/`,
+            contentType: 'application/json',
+            dataType: 'json',
+            async: false,
+            success: function (res) {
+                console.log(res)
+                var browser = ''
+                Object.entries(res.files).forEach((entry) => {
+                    const [key, value] = entry;
+                    browser += `<h2>${key}</h2>`;
+                    Object.entries(value).forEach((scene) => {
+                        const [name, data] = scene;
+                        browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${data}</a></br>`;
+                    });
+                });
+                $('#browser').html("");
+                $('#browser').append(browser);
+                $('a.load_scene').bind('click', load_scene);
+            }
+        });
+    });
+
+});
