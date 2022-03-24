@@ -9,6 +9,7 @@
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.6.3/dat.gui.min.js"></script>
 
 	<script src="/static/js/jquery-3.6.0.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.21/lodash.core.min.js"></script>
 	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
 	<link href="/static/css/main.css" rel="stylesheet" />
 	<style>
@@ -27,21 +28,27 @@
 
 		#browserlist {
 			margin-top: 3em;
-			background-color: rgba(255, 255, 255, 0.1);
+			background-color: rgba(255, 255, 255, 0.25);
+			padding-bottom: 2em;
+			padding-top: 2em;
 		}
 
 		#hide_browser {
 			position: absolute;
-			top: 0px;
-			right: 0px;
+			top: 0.25em;
+			right: 0.25em;
 			font-size: 2em;
 		}
 
 		#show_browser {
 			font-size: 2em;
 			position: absolute;
-			top: 0px;
-			left: 0px;
+			top: 0.25em;
+			left: 0.25em;
+		}
+
+		#spinner {
+			text-align: center;
 		}
 	</style>
 </head>
@@ -56,9 +63,18 @@
 				target="_blank">LearningThree.js</a>
 				boiler plate for
 				<a href="https://github.com/mrdoob/three.js/" target="_blank">three.js</a> -->
+			<div id="spinner">
+				<div class="lds-ring">
+					<div></div>
+					<div></div>
+					<div></div>
+					<div></div>
+				</div>
+
+			</div>
 		</div>
 		<div class="bottom" id="inlineDoc">
-			- <i>p</i> for screenshot
+			<!-- - <i>p</i> for screenshot -->
 		</div>
 		<button type="button" id="show_browser" class="btn"><i class="bi bi-list"></i></button>
 		<div class="left" id="browser" style="overflow-y: scroll; height:100%">

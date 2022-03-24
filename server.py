@@ -40,7 +40,21 @@ def get_file_info(file):
 @lru_cache(maxsize=16)
 def get_file_group(file, group):
     with h5py.File(f'{config["data"]}{file}', "r") as f:
-        return {"coords": f[group]["coords"][:]}
+        res = {}
+        coords = f[group]["coords"][:]
+        res['coords'] = coords
+        res['stats'] = {
+            'count': len(coords),
+            'bounds': [np.min(coords, axis=0),
+                       np.max(coords, axis=0)],
+            'center': np.mean(coords, axis=0),
+        }
+        if "rgb" in f[group]:
+            rgb = f[group]["rgb"][:].astype(np.float32)
+            rgb /= 255
+            res['rgb'] = rgb
+
+        return res
 
 
 @app.route('/')

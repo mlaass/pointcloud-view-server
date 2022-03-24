@@ -30,7 +30,7 @@ function main() {
 
     const canvas = document.querySelector('#c');
     renderer = new THREE.WebGLRenderer({ canvas });
-    renderer.setClearColor(0x111111, 255)
+    renderer.setClearColor(new THREE.Color('#333333'), 255)
     const clock = new THREE.Clock();
 
     const fov = 75;
@@ -152,11 +152,11 @@ function setupControls(ctrl) {
 }
 
 function setupObjects() {
-    var geometry = new THREE.TorusGeometry(1, 0.42);
-    var mmaterial = new THREE.MeshNormalMaterial();
-    var mesh = new THREE.Mesh(geometry, mmaterial);
-    objects.push(mesh);
-    scene.add(mesh);
+    // var geometry = new THREE.TorusGeometry(1, 0.42);
+    // var mmaterial = new THREE.MeshNormalMaterial();
+    // var mesh = new THREE.Mesh(geometry, mmaterial);
+    // objects.push(mesh);
+    // scene.add(mesh);
     const MAX_POINTS = 1000;
 
     var points = new Array(MAX_POINTS * 3);
@@ -173,7 +173,7 @@ function setupObjects() {
         }
     }
 
-    geometry = new THREE.BufferGeometry();
+    var geometry = new THREE.BufferGeometry();
     const positionNumComponents = 3;
     const normalNumComponents = 0;
     const uvNumComponents = 0;
@@ -207,16 +207,28 @@ function addPointCloud(pc) {
     var geometry = new THREE.BufferGeometry();
     const positionNumComponents = 3;
     const normalNumComponents = 0;
-    const uvNumComponents = 0;
+    const rgbNumComponents = 3;
     geometry.setAttribute(
         'position',
-        new THREE.BufferAttribute(new Float32Array(pc.flat()), positionNumComponents));
+        new THREE.BufferAttribute(new Float32Array(pc.coords.flat()), positionNumComponents));
+    if (_.has(pc, 'rgb')) {
+        console.log(pc.rgb);
+        geometry.setAttribute(
+            'color',
+            new THREE.BufferAttribute(new Float32Array(pc.rgb.flat()), rgbNumComponents));
+        material = new THREE.PointsMaterial({
+            vertexColors: true,
+            size: settings.pointSize,
+            sizeAttenuation: true,
+        });
+    } else {
 
-    material = new THREE.PointsMaterial({
-        color: new THREE.Color(settings.color),
-        size: settings.pointSize,
-        sizeAttenuation: true,
-    });
+        material = new THREE.PointsMaterial({
+            color: new THREE.Color(settings.color),
+            size: settings.pointSize,
+            sizeAttenuation: true,
+        });
+    }
     var pointCloud = new THREE.Points(geometry, material);
     objects.push(pointCloud);
     scene.add(pointCloud);
@@ -228,7 +240,12 @@ function setupGUI() {
         .onChange(clr => {
             material.color = new THREE.Color(clr);
         });
-    gui.add(settings, 'controls', { TrackBall: 'trackball', FirstPerson: 'firstperson', Drag: 'drag', Fly: 'fly', Map: 'map', Orbit: 'orbit' })
+    gui.add(settings, 'controls', {
+        TrackBall: 'trackball',
+        FirstPerson: 'firstperson',
+        // Drag: 'drag',
+        Fly: 'fly', Map: 'map', Orbit: 'orbit'
+    })
         .onChange(ctrl => {
             setupControls(ctrl);
         });
@@ -238,43 +255,16 @@ function setupGUI() {
             // Change the size of the points by modifying the size property of the matrial.
             material.size = settings.pointSize;
         });
-
-    gui.add(settings, 'show_grid').onChange(grd => {
-        console.log(grd);
-    });
+    //TODO add grid
+    // gui.add(settings, 'show_grid').onChange(grd => {
+    //     console.log(grd);
+    // });
 }
 
-function load_scene(event) {
-
-    event = event || window.event;
-    console.log(event);
-    if (event.preventDefault) {
-        event.preventDefault();
-    }
-    if (event.stopPropagation) {
-        event.stopPropagation();
-    }
-    var scene_url = $(this).attr("href");
-
-    $.ajax({
-        type: "GET",
-        url: scene_url,
-        contentType: 'application/json',
-        dataType: 'json',
-        async: false,
-        success: function (res) {
-            console.log(res)
-            cleanupScene();
-            addPointCloud(res.coords);
-
-        }
-    });
-
-    return false;
-}
 $(document).ready(function () {
     console.log("ready")
 
+    $('#spinner').hide()
     $("#show_browser").hide();
 
     $('#hide_browser').click(() => {
@@ -289,12 +279,13 @@ $(document).ready(function () {
 
     });
     $('#load_datasets').click(() => {
+        $('#spinner').show();
         $.ajax({
             type: "GET",
             url: `/datasets/`,
             contentType: 'application/json',
             dataType: 'json',
-            async: false,
+            async: true,
             success: (res) => {
                 console.log(res)
                 var browser = ''
@@ -303,14 +294,65 @@ $(document).ready(function () {
                     browser += `<h2>${key}</h2>`;
                     Object.entries(value).forEach((scene) => {
                         const [name, data] = scene;
-                        browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${toHumanString(data)}</a></br>`;
+                        var warn = '';
+                        if (data > 1000 * 1000 * 2) {
+                            warn = ' <i class="bi bi-exclamation-triangle-fill"> big file</i>'
+                        }
+                        browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${toHumanString(data)}</a> ${warn}</br>`;
                     });
                 });
                 $('#browserlist').html("");
                 $('#browserlist').append(browser);
                 $('a.load_scene').bind('click', load_scene);
+                $('#spinner').hide();
             }
         });
     });
+    function load_scene(event) {
+        $('#spinner').show();
+        event = event || window.event;
+        console.log(event);
+        if (event.preventDefault) {
+            event.preventDefault();
+        }
+        if (event.stopPropagation) {
+            event.stopPropagation();
+        }
+        var scene_url = $(this).attr("href");
 
+        $.ajax({
+            type: "GET",
+            url: scene_url,
+            contentType: 'application/json',
+            dataType: 'json',
+            async: false,
+            success: function (res) {
+                console.log("success")
+                cleanupScene();
+                addPointCloud(res);
+                $('#spinner').hide();
+                console.log(res.stats)
+
+            }
+        });
+
+        return false;
+    }
+    var start_url = '/datasets/modelnet10_10k.h5/ModelNet10_monitor_train_monitor_0007'
+
+    // $.ajax({
+    //     type: "GET",
+    //     url: start_url,
+    //     contentType: 'application/json',
+    //     dataType: 'json',
+    //     async: false,
+    //     success: function (res) {
+    //         console.log("success")
+    //         cleanupScene();
+    //         addPointCloud(res);
+    //         $('#spinner').hide();
+    //         console.log(res.stats)
+
+    //     }
+    // });
 });
