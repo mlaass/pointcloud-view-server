@@ -15,7 +15,7 @@ from flask import Flask, request, send_from_directory, render_template, send_fil
 from functools import lru_cache
 
 config = {
-    "data": "/data/ssd/moritz/tf/pointclouds/data/"
+    "datapath": "/data/ssd/moritz/tf/pointclouds/data/"
 }
 
 app = Flask(__name__, static_url_path='')
@@ -30,7 +30,7 @@ class NumpyArrayEncoder(JSONEncoder):
 
 @lru_cache(maxsize=32)
 def get_file_info(file):
-    with h5py.File(f'{config["data"]}{file}', "r") as f:
+    with h5py.File(f'{config["datapath"]}{file}', "r") as f:
         sizes = {}
         for grp in list(f.keys()):
             sizes[grp] = len(f[grp]["coords"])
@@ -39,7 +39,7 @@ def get_file_info(file):
 
 @lru_cache(maxsize=16)
 def get_file_group(file, group):
-    with h5py.File(f'{config["data"]}{file}', "r") as f:
+    with h5py.File(f'{config["datapath"]}{file}', "r") as f:
         res = {}
         coords = f[group]["coords"][:]
         res['coords'] = coords
@@ -64,8 +64,10 @@ def root_route():
 
 @app.route('/datasets/')
 def send_ds_route():
-    files = glob.glob(f'{config["data"]}**.h5', recursive=False)
+    files = glob.glob(f'{config["datapath"]}**.h5', recursive=False)
     files = [os.path.basename(f) for f in files]
+    files = [f for f in files if not f.endswith('_features.h5')]
+
     info = {}
     for file in files:
         info[file] = get_file_info(file)

@@ -292,14 +292,21 @@ $(document).ready(function () {
                 Object.entries(res.files).forEach((entry) => {
                     const [key, value] = entry;
                     browser += `<h2>${key}</h2>`;
+                    var min = Number.MAX_SAFE_INTEGER;
+                    var max = 0;
+                    var total = 0;
                     Object.entries(value).forEach((scene) => {
                         const [name, data] = scene;
                         var warn = '';
+                        min = (data < min) ? data : min;
+                        max = (data > max) ? data : max;
+                        total += data;
                         if (data > 1000 * 1000 * 2) {
                             warn = ' <i class="bi bi-exclamation-triangle-fill"> big file</i>'
                         }
                         browser += `<a href="/datasets/${key}/${name}" class="load_scene">${name}: ${toHumanString(data)}</a> ${warn}</br>`;
                     });
+                    console.log(`${key}: min: ${toHumanString(min)}, max: ${toHumanString(max)}, total: ${toHumanString(total)}`);
                 });
                 $('#browserlist').html("");
                 $('#browserlist').append(browser);
@@ -325,7 +332,7 @@ $(document).ready(function () {
             url: scene_url,
             contentType: 'application/json',
             dataType: 'json',
-            async: false,
+            async: true,
             success: function (res) {
                 console.log("success")
                 cleanupScene();
@@ -338,6 +345,47 @@ $(document).ready(function () {
 
         return false;
     }
+    function takeScreenshot() {
+        // https://jsfiddle.net/2pha/art388yv/
+        // open in new window like this
+        //
+        var w = window.open('', '');
+        w.document.title = "Screenshot";
+        //w.document.body.style.backgroundColor = "red";
+        var img = new Image();
+        // Without 'preserveDrawingBuffer' set to true, we must render now
+        renderer.render(scene, camera);
+        img.src = renderer.domElement.toDataURL();
+        w.document.body.appendChild(img);
+
+        /*
+            // download file like this.
+            //
+            var a = document.createElement('a');
+            // Without 'preserveDrawingBuffer' set to true, we must render now
+            renderer.render(scene, camera);
+            a.href = renderer.domElement.toDataURL().replace("image/png", "image/octet-stream");
+            a.download = 'canvas.png'
+            a.click();
+        */
+
+        /*
+            // New version of file download using toBlob.
+            // toBlob should be faster than toDataUrl.
+            // But maybe not because also calling createOjectURL.
+            //
+            renderer.render(scene, camera);
+            renderer.domElement.toBlob(function(blob){
+                var a = document.createElement('a');
+              var url = URL.createObjectURL(blob);
+              a.href = url;
+              a.download = 'canvas.png';
+              a.click();
+            }, 'image/png', 1.0);
+        */
+
+    }
+
     var start_url = '/datasets/modelnet10_10k.h5/ModelNet10_monitor_train_monitor_0007'
 
     // $.ajax({
