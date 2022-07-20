@@ -1,13 +1,32 @@
-[boilerplate for three.js](https://github.com/jeromeetienne/threejsboilerplate)
-is a template to get you started. You download it and modify it until it fits your needs.
-It is a fast way to start a clean project with [three.js](https://github.com/mrdoob/three.js/).
-It avoids repetitive tasks, following DRY principles.
-It includes various good practices and compatibilities features.
-More details [here](http://learningthreejs.com/blog/2011/12/20/boilerplate-for-three-js/).
+# 3D Pointcloud Viewer
 
-# Get Started
+Renders pointclouds saved in h5 format using three.js.
+
+h5 format:
 ```
-git clone https://github.com/jeromeetienne/threejsboilerplate.git
+<FILENAME>.h5 h5file {
+    <POINTCLOUD_NAME> Group {
+        coords: Dataset {<SIZE>, 3}
+        rgb: Dataset {<SIZE>, 3} (optional)
+    }
+}
+```
+## installing
+```
+pip install -r requirements.txt
 ```
 
-And start updating ```index.html``` until it fits yours need.
+## configure
+ In `server.py` change datapath to point to the directoris with your h5 files:
+ ```
+config = {
+    "datapath": "/data/pointclouds/data/"
+}
+ ```
+
+## running
+to run just start flask and go to the provided url in your browser.
+
+```
+./run.sh
+```

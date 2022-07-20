@@ -9,7 +9,6 @@ import os
 import glob
 import h5py
 import struct
-from tqdm import tqdm
 import numpy as np
 from flask import Flask, request, send_from_directory, render_template, send_file, make_response
 from functools import lru_cache

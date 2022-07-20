@@ -48,6 +48,7 @@ function main() {
     setupGUI();
     setupObjects();
     setupControls(settings.controls);
+    setFog();
     // stats = new Stats();
     // stats.domElement.style.position = 'absolute';
     // stats.domElement.style.bottom = '0px';
@@ -190,7 +191,11 @@ function setupObjects() {
     objects.push(pointCloud);
     scene.add(pointCloud);
 }
-
+function setFog(color = 0x000000FF) {
+    const near = 0.1;
+    const far = 500;
+    scene.fog = new THREE.Fog(color, near, far);
+}
 function cleanupScene() {
     objects.forEach(i => {
         const object = scene.getObjectByProperty('uuid', i.uuid);
@@ -345,6 +350,7 @@ $(document).ready(function () {
 
         return false;
     }
+
     function takeScreenshot() {
         // https://jsfiddle.net/2pha/art388yv/
         // open in new window like this
